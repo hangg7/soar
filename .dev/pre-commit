@@ -1,4 +1,4 @@
 #!/bin/sh
 
-black soar scripts preproc
-isort --profile black soar scripts preproc
+black soar preproc
+isort --profile black soar preproc
