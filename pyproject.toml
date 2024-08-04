@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==65.6.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "soar"
+version = "0.0.0"
+authors = []
+requires-python = ">=3.10"
+dependencies = [
+  "opencv-python",
+  "imageio",
+  "imageio-ffmpeg",
+  "tyro",
+  "viser",
+  "nerfview",
+  "roma",
+  "nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast/",
+]
+
+[project.optional-dependencies]
+dev = ["black", "isort", "ipdb"]
+
+[tool.setuptools.packages.find]
+include = ["soar"]
+
+[tool.isort]
+profile = "black"
