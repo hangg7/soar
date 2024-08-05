@@ -66,6 +66,10 @@ def render_mesh(
         img_wh: (2,).
     """
     W, H = img_wh
+    # Align the resolution to multiples of 8.
+    W = (W + 7) // 8 * 8
+    H = (H + 7) // 8 * 8
+    # Use CUDA context if the resolution is small.
     ctx = CUDA_CTX if max(W, H) <= 2048 else GL_CTX
 
     # Maintain two sets of typed faces for different ops.
@@ -112,7 +116,13 @@ def render_mesh(
     normal[..., [1, 2]] *= -1.0
     normal = mask * (normal + 1.0) / 2.0
 
+    # Crop the results.
+    W, H = img_wh
+    normal = normal[:H, :W]
+    mask = mask[:H, :W]
+
     return {
         # (H, W, 3).
         "normal": normal,
+        "mask": mask,
     }

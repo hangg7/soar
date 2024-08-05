@@ -33,25 +33,25 @@ def main(
         print("SMPLER-X already computed.")
     else:
         # Run smplerx.
-        subprocess.call(
-            f"""
-source /home/hangg/.anaconda3/bin/activate smplerx; python inference.py \
-    --num_gpus 1 \
-    --pretrained_model smpler_x_h32 \
-    --agora_benchmark agora_model \
-    --img_path {img_dir} \
-    --start 0 \
-    --end -1 \
-    --output_folder {smplx_dir} \
-    --show_verts \
+        cmd = f"""
+source /home/hangg/.anaconda3/bin/activate smplerx; python inference.py \\
+    --num_gpus 1 \\
+    --pretrained_model smpler_x_h32 \\
+    --agora_benchmark agora_model \\
+    --img_path {img_dir} \\
+    --output_folder {smplx_dir} \\
+    --show_verts \\
     --show_bbox
-            """,
+        """
+        print("Running command:", cmd)
+        subprocess.call(
+            cmd,
             cwd=osp.join(smplerx_dir, "main"),
             shell=True,
             executable="/bin/bash",
         )
     if osp.exists(osp.join(smplx_dir, "params.pth")):
-        print("SMPLX already optimized.")
+        print("SMPL-X already optimized.")
     else:
         device = "cuda"
 

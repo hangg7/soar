@@ -1201,3 +1201,21 @@ def draw_facepose(canvas, all_lmks, color=None):
                     thickness=-1,
                 )
     return canvas
+
+
+def transform_K_by_bbox(K, bbox, crop_wh):
+    fx, fy, cx, cy = K[0, 0], K[1, 1], K[0, 2], K[1, 2]
+    x1, y1, x2, y2 = bbox
+    W_c, H_c = crop_wh
+    fx_c = W_c / (x2 - x1) * fx
+    fy_c = H_c / (y2 - y1) * fy
+    cx_c = W_c / (x2 - x1) * (cx - x1)
+    cy_c = H_c / (y2 - y1) * (cy - y1)
+    return torch.tensor(
+        [
+            [fx_c, 0.0, cx_c],
+            [0.0, fy_c, cy_c],
+            [0.0, 0.0, 1.0],
+        ],
+        device=K.device,
+    )
