@@ -25,6 +25,8 @@ CUDA_VISIBLE_DEVICES=8 python preproc/preprocess_custom.py \
     --smplerx-dir /home/hangg/projects/smplerx/
 ```
 
+It takes around 30 mins for 400 frames or some big 2K-4K images. For dance_0 it takes around 8 mins.
+
 Proprocessed data look like this:
 
 ```
@@ -48,3 +50,5 @@ Proprocessed data look like this:
     - dance_2
     - nadia
     - truman
+  - @HG: masks are not good for some sequences, it will be some kind of a bottleneck for the recon model. E.g.: nadia and dance_1 have some bad mask frames.
+  - @HG: SMPLify-X doesn't work very well for truman bc of SMPLERX error. There are some scaling issue, might worth looking into.
