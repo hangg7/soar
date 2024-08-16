@@ -11,6 +11,9 @@
 # For proper setup.
 pip install -e ".[all]"
 pip install -r submodules/econ/requirements.txt
+
+# For training setup.
+ln -sf $(pwd)/soar/threestudio-soar $(pwd)/submodules/threestudio/custom/ 
 ```
 
 ## Preprocess custom videos
