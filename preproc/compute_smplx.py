@@ -21,6 +21,7 @@ def main(
     model_path: str = osp.join(osp.dirname(__file__), "../datasets/models/"),
     debug: bool = False,
     preserve_weight: float = 60.0,
+    smooth_weight: float = 10000.0,
 ):
     img_dir = osp.join(data_dir, "images")
     kp_dir = osp.join(data_dir, "keypoints")
@@ -57,8 +58,7 @@ source /home/hangg/.anaconda3/bin/activate smplerx; python inference.py \\
 
         img_paths = sorted(glob(osp.join(img_dir, "*.png")))
         N = len(img_paths)
-        imgs = [iio.imread(img_path) for img_path in img_paths]
-
+        imgs = [iio.imread(img_path)[..., :3] for img_path in img_paths]
         body_model = smplx.create(
             model_path=model_path,
             model_type="smplx",
@@ -103,6 +103,7 @@ source /home/hangg/.anaconda3/bin/activate smplerx; python inference.py \\
             body_model,
             visual_dir=smplx_dir,
             preserve_weight=preserve_weight,
+            smooth_weight=smooth_weight,
             debug=debug,
         ).to(device)
         target_kps = torch.as_tensor(keypoints, device=device)

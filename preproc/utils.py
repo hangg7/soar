@@ -637,6 +637,7 @@ class SMPLify(nn.Module):
     ):
         # Keypoint loss.
         pred_joints = self.convert_kps(body_output.joints)
+   
         pred_joints_c = torch.einsum(
             "ij,nkj->nki", w2c[:3], F.pad(pred_joints, (0, 1), value=1.0)  # type: ignore
         )

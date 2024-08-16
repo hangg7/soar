@@ -45,7 +45,8 @@ python {preproc_dir}/compute_kp_and_mask.py \\
     cmd = f"""
 python {preproc_dir}/compute_smplx.py \\
     --data-dir {data_dir} \\
-    --smplerx-dir {smplerx_dir}
+    --smplerx-dir {smplerx_dir} \\
+    --smooth-weight 0.0
     """
     print("Running command:", cmd)
     subprocess.call(cmd, shell=True)
