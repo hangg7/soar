@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass, field
 from os.path import dirname, join, realpath
 from typing import List
+from copy import deepcopy
 
 import numpy as np
 import torch
@@ -626,7 +627,7 @@ class SMPL_Guidance(BaseObject):
     def __call__(
         self,
         points,
-        smpl_parms=None,
+        smpl_parms_in={},
         idx=None,
         zero_out=False,
         delta=None,
@@ -635,74 +636,51 @@ class SMPL_Guidance(BaseObject):
     ):
         device = self.device
         cano_deform_point = self.query_points
-        #  print("points", points.shape, "cano_deform_point", cano_deform_point.shape)
         if delta is not None:
             cano_deform_point += delta[None]
-        with torch.no_grad():
-            if smpl_parms is not None or idx is not None:
-                if idx is not None:
-                    idx = idx % len(self.smpl_parms["body_pose"])
-                    idx = torch.tensor([idx]).cuda()
-                    smpl_parms = {}
-                    smpl_parms["betas"] = self.smpl_parms["betas"] #[None]
-                    pose_out = self.pose(idx)
-                    smpl_parms["body_pose"] = pose_out[..., 3:]
-                    smpl_parms["global_orient"] = pose_out[..., :3]
-                    smpl_parms["transl"] = self.transl(idx)
-                    if self.cfg.smpl_type == "smplx":
-                        hand_out = self.hand_pose(idx)
+        
+        smpl_parms = {}
+        if smpl_parms_in != {}:
+            smpl_parms = deepcopy(smpl_parms_in)
+        
+        if idx is not None:
+            idx = idx % len(self.smpl_parms["body_pose"])
+            idx = torch.tensor([idx]).cuda()
+            smpl_parms["betas"] = self.smpl_parms["betas"] #[None]
+            pose_out = self.pose(idx)
+            smpl_parms["body_pose"] = pose_out[..., 3:]
+            smpl_parms["global_orient"] = pose_out[..., :3]
+            smpl_parms["transl"] = self.transl(idx)
+            if self.cfg.smpl_type == "smplx":
+                hand_out = self.hand_pose(idx)
 
-                        smpl_parms["left_hand_pose"] = hand_out[..., :45]
-                        smpl_parms["right_hand_pose"] = hand_out[..., 45:]
-                        smpl_parms["jaw_pose"] = self.smpl_parms["jaw_pose"][idx]
-                        smpl_parms["leye_pose"] = self.smpl_parms["leye_pose"][idx]
-                        smpl_parms["reye_pose"] = self.smpl_parms["reye_pose"][idx]
-                        smpl_parms["expression"] = self.smpl_parms["expression"][idx]
-                if zero_out:
-                    live_smpl = self.smpl_model.forward(
-                        betas=smpl_parms["betas"],
-                        body_pose=smpl_parms["body_pose"],
-                        global_orient=torch.zeros_like(smpl_parms["global_orient"]),
-                        transl=torch.zeros_like(smpl_parms["transl"])
-                        + torch.tensor([0.0, 0.3, 0.0], device=device),
-                        **{
-                            k: v
-                            for k, v in smpl_parms.items()
-                            if k
-                            not in ["betas", "body_pose", "global_orient", "transl"]
-                        },
-                    )
-                else:
-                    live_smpl = self.smpl_model.forward(
-                        betas=smpl_parms["betas"],
-                        body_pose=smpl_parms["body_pose"],
-                        global_orient=smpl_parms["global_orient"],
-                        transl=(
-                            smpl_parms["transl"]
-                        ),
-                        **{
-                            k: v
-                            for k, v in smpl_parms.items()
-                            if k
-                            not in ["betas", "body_pose", "global_orient", "transl"]
-                        },
-                    )
-
-            else:
-                live_smpl = self.smpl_model.forward(
-                    betas=self.smpl_parms_["betas"][0][None],
-                    body_pose=self.smpl_parms_["body_pose"][0][None],
-                    global_orient=torch.zeros_like(
-                        self.smpl_parms_["global_orient"][0][None]
-                    ),
-                    transl=torch.zeros_like(self.smpl_parms_["transl"][0][None])
-                    + torch.tensor([0.0, 0.3, 0.0], device=device),
-                    **{
-                        k: v[0][None]
-                        for k, v in self.smpl_parms_.items()
-                        if k not in ["betas", "body_pose", "global_orient", "transl", "w2c", "normal_Ks", "img_wh"]
-                    },
-                )
+                smpl_parms["left_hand_pose"] = hand_out[..., :45]
+                smpl_parms["right_hand_pose"] = hand_out[..., 45:]
+                smpl_parms["jaw_pose"] = self.smpl_parms["jaw_pose"][idx]
+                smpl_parms["leye_pose"] = self.smpl_parms["leye_pose"][idx]
+                smpl_parms["reye_pose"] = self.smpl_parms["reye_pose"][idx]
+                smpl_parms["expression"] = self.smpl_parms["expression"][idx]
+        
+        if smpl_parms == {}: 
+            smpl_parms = {
+                "betas": self.smpl_parms["betas"][0][None],
+                "body_pose": self.smpl_parms["body_pose"][0][None],
+                "global_orient": torch.zeros_like(self.smpl_parms["global_orient"][0][None]),
+                "transl": torch.zeros_like(self.smpl_parms["transl"][0][None]) + torch.tensor([0.0, 0.3, 0.0], device=device),
+                **{k : v[0][None] for k, v in self.smpl_parms.items() if k not in ["betas", "body_pose", "global_orient", "transl", "w2c", "normal_Ks", "img_wh"]}
+            }
+        if zero_out:
+            smpl_parms["global_orient"] = torch.zeros_like(smpl_parms["global_orient"])
+            smpl_parms["transl"] = torch.zeros_like(smpl_parms["transl"]) + torch.tensor([0.0, 0.3, 0.0], device=device)
+            
+        live_smpl = self.smpl_model.forward(
+            betas=smpl_parms["betas"],
+            body_pose=smpl_parms["body_pose"],
+            global_orient=smpl_parms["global_orient"],
+            transl=smpl_parms["transl"],
+            **{k : v for k, v in smpl_parms.items() if k not in ["betas", "body_pose", "global_orient", "transl", "w2c", "normal_Ks", "img_wh"]}
+        )
+        
         cano2live_jnt_mats = torch.matmul(live_smpl.A, self.inv_mats)
 
         updated_weights = self.query_weights_smpl(points)[None].detach()

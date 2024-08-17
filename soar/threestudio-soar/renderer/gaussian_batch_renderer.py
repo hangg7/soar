@@ -37,8 +37,8 @@ class GaussianBatchRenderer:
             fovy=fovy,
             znear=0.1,
             zfar=100,
-            cxcy=(batch["gt_cx"][0].item(), batch["gt_cy"][0].item()),
-            img_wh=(batch["gt_width"], batch["gt_height"]),
+            #cxcy=(batch["gt_cx"][0].item(), batch["gt_cy"][0].item()),
+            #img_wh=(batch["gt_width"], batch["gt_height"]),
         )
 
         # breakpoint()
@@ -65,6 +65,13 @@ class GaussianBatchRenderer:
         )
         prcppoint = torch.tensor(
             [
+                batch["gt_cx"][0].item() / batch["gt_width"],
+                batch["gt_cy"][0].item() / batch["gt_height"],
+            ],
+            device=w2c.device,
+        )
+        prcppoint_normal = torch.tensor(
+            [
                 batch["gt_normal_cx"][0].item() / batch["gt_normal_res"],
                 batch["gt_normal_cy"][0].item() / batch["gt_normal_res"],
                 1.0,
@@ -79,7 +86,7 @@ class GaussianBatchRenderer:
             world_view_transform=w2c,
             full_proj_transform=proj,
             camera_center=cam_p,
-            prcppoint=torch.tensor([0.5, 0.5], device=w2c.device),
+            prcppoint=prcppoint, #torch.tensor([0.5, 0.5], device=w2c.device),
         )
         viewpoint_cam_normal = Camera(
             FoVx=normal_fovx,

@@ -319,7 +319,7 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             else:
                 idx = idx % len(pc.smpl_guidance.smpl_parms["body_pose"])
                 points_attributes = pc.attribute_field(
-                    points.detach(), z=pc.latent_pose[idx]
+                    points.detach(), #z=pc.latent_pose[idx]
                 )
             (
                 attribute_color,
