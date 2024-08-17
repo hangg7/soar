@@ -133,65 +133,65 @@ class GaussianBatchRenderer:
             if render_pkg.__contains__("comp_bg"):
                 comp_bgs.append(render_pkg["comp_bg"])
             
-            if render_pkg.__contains__("normal"):
-                normals.append(render_pkg["normal"])
-                normals.append(render_pkg["normal"])
+            # if render_pkg.__contains__("normal"):
+            #     normals.append(render_pkg["normal"])
+            #     normals.append(render_pkg["normal"])
+            # if (
+            #     render_pkg.__contains__("pred_normal")
+            #     and render_pkg["pred_normal"] is not None
+            # ):
+            #     pred_normals.append(render_pkg["pred_normal"])
+            #     pred_normals.append(render_pkg["pred_normal"])
+            # if render_pkg.__contains__("mask"):
+            #     normal_masks.append(render_pkg["mask"])
+            #     normal_masks.append(render_pkg["mask"])
+
+        with autocast(enabled=False):
+            render_pkg_normal = self.forward(
+                viewpoint_cam_normal,
+                self.background_tensor,
+                gt=True,
+                mode=mode,
+                stage=stage,
+                #  normal_crop=True,
+                **batch
+            )
+            viewspace_points.append(render_pkg_normal["viewspace_points"])
+            visibility_filters.append(render_pkg_normal["visibility_filter"])
+            radiis.append(render_pkg_normal["radii"])
+            if render_pkg_normal.__contains__("normal"):
+                normals.append(render_pkg_normal["normal"])
             if (
-                render_pkg.__contains__("pred_normal")
-                and render_pkg["pred_normal"] is not None
+                render_pkg_normal.__contains__("pred_normal")
+                and render_pkg_normal["pred_normal"] is not None
             ):
-                pred_normals.append(render_pkg["pred_normal"])
-                pred_normals.append(render_pkg["pred_normal"])
-            if render_pkg.__contains__("mask"):
-                normal_masks.append(render_pkg["mask"])
-                normal_masks.append(render_pkg["mask"])
+                pred_normals.append(render_pkg_normal["pred_normal"])
+            if render_pkg_normal.__contains__("mask"):
+                normal_masks.append(render_pkg_normal["mask"])
 
-        # with autocast(enabled=False):
-        #     render_pkg_normal = self.forward(
-        #         viewpoint_cam_normal,
-        #         self.background_tensor,
-        #         gt=True,
-        #         mode=mode,
-        #         stage=stage,
-        #         #  normal_crop=True,
-        #         **batch
-        #     )
-        #     viewspace_points.append(render_pkg_normal["viewspace_points"])
-        #     visibility_filters.append(render_pkg_normal["visibility_filter"])
-        #     radiis.append(render_pkg_normal["radii"])
-        #     if render_pkg_normal.__contains__("normal"):
-        #         normals.append(render_pkg_normal["normal"])
-        #     if (
-        #         render_pkg_normal.__contains__("pred_normal")
-        #         and render_pkg_normal["pred_normal"] is not None
-        #     ):
-        #         pred_normals.append(render_pkg_normal["pred_normal"])
-        #     if render_pkg_normal.__contains__("mask"):
-        #         normal_masks.append(render_pkg_normal["mask"])
-
-        # with autocast(enabled=False):
-        #     render_pkg_normal_B = self.forward(
-        #         viewpoint_cam_normal_B,
-        #         self.background_tensor,
-        #         gt=True,
-        #         mode=mode,
-        #         stage=stage,
-        #         #  normal_crop=True,
-        #         render_front=False,
-        #         **batch
-        #     )
-        #     viewspace_points.append(render_pkg_normal_B["viewspace_points"])
-        #     visibility_filters.append(render_pkg_normal_B["visibility_filter"])
-        #     radiis.append(render_pkg_normal_B["radii"])
-        #     if render_pkg_normal_B.__contains__("normal"):
-        #         normals.append(render_pkg_normal_B["normal"])
-        #     if (
-        #         render_pkg_normal_B.__contains__("pred_normal")
-        #         and render_pkg_normal_B["pred_normal"] is not None
-        #     ):
-        #         pred_normals.append(render_pkg_normal_B["pred_normal"])
-        #     if render_pkg_normal_B.__contains__("mask"):
-        #         normal_masks.append(render_pkg_normal_B["mask"])
+        with autocast(enabled=False):
+            render_pkg_normal_B = self.forward(
+                viewpoint_cam_normal_B,
+                self.background_tensor,
+                gt=True,
+                mode=mode,
+                stage=stage,
+                #  normal_crop=True,
+                render_front=False,
+                **batch
+            )
+            viewspace_points.append(render_pkg_normal_B["viewspace_points"])
+            visibility_filters.append(render_pkg_normal_B["visibility_filter"])
+            radiis.append(render_pkg_normal_B["radii"])
+            if render_pkg_normal_B.__contains__("normal"):
+                normals.append(render_pkg_normal_B["normal"])
+            if (
+                render_pkg_normal_B.__contains__("pred_normal")
+                and render_pkg_normal_B["pred_normal"] is not None
+            ):
+                pred_normals.append(render_pkg_normal_B["pred_normal"])
+            if render_pkg_normal_B.__contains__("mask"):
+                normal_masks.append(render_pkg_normal_B["mask"])
 
         outputs = {
             "comp_rgb": torch.stack(renders, dim=0).permute(0, 2, 3, 1),

@@ -136,7 +136,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         gt_viewspace_point_tensor = gt_out["viewspace_points"]
 
         save_dir = self.get_save_dir()
-        if iteration % 500 == 0:
+        if iteration % 50 == 0:
             test_dir = os.path.join(save_dir, f"test_{iteration}")
             os.makedirs(test_dir, exist_ok=True)
             rendered_out = torch.cat([gt_out["comp_rgb"], batch["gt_rgb"]], dim=0)

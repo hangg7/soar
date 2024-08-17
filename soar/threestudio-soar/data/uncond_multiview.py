@@ -144,7 +144,7 @@ class RandomMultiviewCameraIterableDataset(RandomCameraIterableDataset):
         val_list = val_list[len(val_list) // 2:]
         split_type = split
         threestudio.info(f"Using {split_type} split")
-        train_list = [0, 4] 
+        # train_list = [0] #, 4] 
         if split_type == "train":
             self.index_list = train_list
         elif split_type == "val":
@@ -3375,11 +3375,11 @@ class RandomMultiviewCameraDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None) -> None:
         if stage in [None, "fit"]:
-            self.train_dataset = FSRandomMultiviewCameraIterableDataset(self.cfg)
+            self.train_dataset = RandomMultiviewCameraIterableDataset(self.cfg)
         if stage in [None, "fit", "validate"]:
             self.val_dataset = RandomCameraDataset(self.cfg, "val")
         if stage in [None, "test", "predict"]:
-            self.test_dataset = FSValDataset(self.cfg) #RandomCameraDataset(self.cfg, "test")
+            self.test_dataset = ValDataset(self.cfg) #RandomCameraDataset(self.cfg, "test")
 
     def prepare_data(self):
         pass

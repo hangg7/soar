@@ -393,14 +393,14 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             rot = matrix_to_quaternion(rot_mat)
             rot = torch.nn.functional.normalize(rot, p=2, dim=-1)[0]
             
-            if True: #not self.training:
-                # for FS-Human
-                points = (points - root) * scale
-                points[..., 0] = -points[..., 0]
+            # if True: #not self.training:
+            #     # for FS-Human
+            #     points = (points - root) * scale
+            #     points[..., 0] = -points[..., 0]
                 
-                normal = quaternion2rotmat(rot)[..., 2]
-                normal[..., 0] *= -1
-                rot = normal2rotation(normal, normalize=True)
+            #     normal = quaternion2rotmat(rot)[..., 2]
+            #     normal[..., 0] *= -1
+            #     rot = normal2rotation(normal, normalize=True)
                 
             if not self.training:
                 bg_color = torch.ones_like(bg_color)
@@ -502,8 +502,8 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             scales = attribute_scale.repeat(1, 3)  #
         
         # For FS-Human
-        if gt: 
-            scales *= scale
+        # if gt: 
+        #     scales *= scale
         
         scales[..., -1] = -1e10
         rotations = rot

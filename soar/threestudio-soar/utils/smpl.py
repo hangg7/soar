@@ -163,7 +163,7 @@ class SMPL_Guidance(BaseObject):
         skip: int = 4
 
         seq: str = "dance"
-        dataset: str = "fs-xhumans/soar" #neuman" #"insav_wild"  # "dna_rendering" #"insav_wild"
+        dataset: str = "neuman" #"fs-xhumans/soar" #neuman" #"insav_wild"  # "dna_rendering" #"insav_wild"
         # cache_dir: str = "custom/threestudio-shap-e/shap-e/cache"
         num_subdiv: int = 2  # 1
 
@@ -355,9 +355,7 @@ class SMPL_Guidance(BaseObject):
                         return_joints=True
                     )
                 self.root = tpose_out.joints[0,0,:].reshape(1,3)[0]
-            # self.root = 0
             self.scale = 0.5
-            # breakpoint()
              # Convert to perfect pinhole camera.
             with torch.inference_mode():
                 body_output = self.smpl_model(
@@ -371,82 +369,7 @@ class SMPL_Guidance(BaseObject):
                 "ij,nvj->nvi",
                 smpl_data["w2c"][:3].cuda(),
                 F.pad(verts, (0, 1), value=1.0),
-            )
-            normal_Ks_perfect = smpl_data["normal_Ks"].cuda().clone()
-            #  target_fov = 0.1
-            #  focal = 512 / (2 * np.tan(target_fov / 2).item())
-            #  normal_Ks_perfect[:, 0, 0] = focal
-            #  normal_Ks_perfect[:, 1, 1] = focal
-            normal_Ks_perfect[:, :2, -1] = (
-                normal_Ks_perfect.new_tensor((512, 512)) / 2.0
-            )
-            normal_transl_perfect = smpl_data["transl"].cuda().clone()
-            normal_transl_perfect[:, 0] += (
-                verts[..., -1].mean(-1)
-                / smpl_data["normal_Ks"].cuda()[:, 0, 0]
-                * (smpl_data["normal_Ks"][:, 0, 2].cuda() - normal_Ks_perfect[:, 0, 2])
-            )
-            normal_transl_perfect[:, 1] += (
-                verts[..., -1].mean(-1)
-                / smpl_data["normal_Ks"].cuda()[:, 1, 1]
-                * (smpl_data["normal_Ks"][:, 1, 2].cuda() - normal_Ks_perfect[:, 1, 2])
-            )
-            #  normal_transl_perfect[:, 2] = (
-            #      verts[..., -1].mean(-1) * focal / smpl_data["normal_Ks"][:, 0, 0].cuda()
-            #  )
-            self.normal_perfect_parms = {
-                "Ks": normal_Ks_perfect,
-                "transl": normal_transl_perfect,
-            }
-            # Save effective w2cs for imagedream camera condition.
-            with torch.inference_mode():
-                roots = self.smpl_model(
-                    betas=self.smpl_parms["betas"][None].repeat_interleave(
-                        len(self.smpl_parms["body_pose"]), dim=0
-                    ),
-                    body_pose=self.smpl_parms["body_pose"],
-                    global_orient=torch.zeros_like(self.smpl_parms["global_orient"]),
-                    transl=torch.zeros_like(self.smpl_parms["transl"]),
-                    left_hand_pose=self.smpl_parms["left_hand_pose"],
-                    right_hand_pose=self.smpl_parms["right_hand_pose"],
-                    jaw_pose=self.smpl_parms["jaw_pose"],
-                    leye_pose=self.smpl_parms["leye_pose"],
-                    reye_pose=self.smpl_parms["reye_pose"],
-                    expression=self.smpl_parms["expression"],
-                ).joints[:, 0]
-
-            Ks = smpl_data["normal_Ks"].cuda().clone()
-            w2c = smpl_data["w2c"].cuda().clone()
-            new_Ks = Ks.clone()
-            new_Ks[:, :2, -1] = 256.0
-
-            Ks_4 = torch.eye(4, device="cuda")[None].repeat_interleave(len(Ks), dim=0)
-            Ks_4[:, :3, :3] = Ks
-            Ms_4 = torch.eye(4, device="cuda")[None].repeat_interleave(len(Ks), dim=0)
-            Ms_4[:, :3, :3] = axis_angle_to_matrix(self.smpl_parms["global_orient"])
-            Ms_4[:, :3, -1] = (
-                roots
-                + self.smpl_parms["transl"]
-                - torch.einsum("nij,nj->ni", Ms_4[:, :3, :3], roots)
-            )
-            new_Ks_4 = torch.eye(4, device="cuda")[None].repeat_interleave(
-                len(Ks), dim=0
-            )
-            new_Ks_4[:, :3, :3] = new_Ks
-            new_Ms_4 = torch.eye(4, device="cuda")[None].repeat_interleave(
-                len(Ks), dim=0
-            )
-            new_Ms_4[:, :3, -1] = torch.zeros_like(
-                self.smpl_parms["transl"]
-            ) + torch.tensor([0.0, 0.3, 0.0], device="cuda")
-            new_w2cs = (
-                torch.linalg.inv(new_Ks_4)
-                @ Ks_4
-                @ w2c[None]
-                @ Ms_4
-                @ torch.linalg.inv(new_Ms_4)
-            )
-            self.effective_w2cs = new_w2cs
+            ) 
 
             verts, faces, uvs, uv_faces = load_obj_mesh(
                 "custom/threestudio-soar/utils/assets/template_mesh_smplx_uv.obj",
@@ -560,7 +483,111 @@ class SMPL_Guidance(BaseObject):
             self.init_q = init_q.to("cuda")
             self.root = 0
             self.scale = 1.0
-            
+        else:
+            self.smpl_model = (
+                SMPLX(
+                    model_path=model_path,
+                    gender=self.cfg.gender,
+                    batch_size=self.cfg.batch_size,
+                    use_pca=False,
+                    use_face_contour=True,
+                )
+                .cuda()
+                .eval()
+            )
+            smpl_data = torch.load(
+                f"../../datasets/{self.cfg.dataset}/{self.cfg.seq}/smplx/params.pth"
+            )
+            self.smpl_parms = {
+                "betas": smpl_data["betas"].cuda(),
+                "body_pose": smpl_data["body_pose"].cuda().flatten(-2, -1),
+                "global_orient": smpl_data["global_orient"].cuda(),
+                "transl": smpl_data["transl"].cuda(),
+                "left_hand_pose": smpl_data["left_hand_pose"].cuda().flatten(-2, -1),
+                "right_hand_pose": smpl_data["right_hand_pose"].cuda().flatten(-2, -1),
+                "jaw_pose": smpl_data["jaw_pose"].cuda(),
+                "leye_pose": smpl_data["leye_pose"].cuda(),
+                "reye_pose": smpl_data["reye_pose"].cuda(),
+                "expression": smpl_data["expression"].cuda(),
+            }
+            self.smpl_parms_ = self.smpl_parms
+            with torch.inference_mode():
+                body_output = self.smpl_model(
+                    **self.smpl_parms,
+                    # **{k: v for k, v in self.smpl_parms.items() if k != "betas"},
+                    # betas=self.smpl_parms["betas"][None].repeat_interleave(
+                    #     self.smpl_parms["body_pose"].shape[0], dim=0
+                    # ),
+                )
+            verts = body_output.vertices
+            verts = torch.einsum(
+                "ij,nvj->nvi",
+                smpl_data["w2c"][:3].cuda(),
+                F.pad(verts, (0, 1), value=1.0),
+            ) 
+
+            verts, faces, uvs, uv_faces = load_obj_mesh(
+                "custom/threestudio-soar/utils/assets/template_mesh_smplx_uv.obj",
+                with_texture=True,
+            )
+            self.cano_mesh = {
+                "verts": torch.from_numpy(verts).cuda().float(),
+                "faces": torch.from_numpy(faces.astype(np.int32)).cuda(),
+                "uvs": torch.from_numpy(uvs).cuda().float(),
+                "uv_faces": torch.from_numpy(uv_faces.astype(np.int32)).cuda(),
+            }
+
+            leg_angle = 30
+            smplx_cpose_param = torch.zeros(1, 165).cuda()
+            smplx_cpose_param[:, 5] = leg_angle / 180 * math.pi
+            smplx_cpose_param[:, 8] = -leg_angle / 180 * math.pi
+            cano_smpl = self.smpl_model.forward(
+                betas=self.smpl_parms["betas"],
+                global_orient=smplx_cpose_param[:, :3],
+                transl=torch.tensor([[0, 0.30, 0]]).cuda(),
+                body_pose=smplx_cpose_param[:, 3 : 3 + 21 * 3],
+            )
+
+            self.inv_mats = torch.linalg.inv(cano_smpl.A.detach())
+            self.ori_lbs = self.smpl_model.lbs_weights[None]
+            self.cano_vertices = cano_smpl.vertices[0].detach()
+
+            new_sampled_points, new_mesh = init_xyz_on_mesh(
+                self.cano_vertices, faces, self.cfg.num_subdiv
+            )
+            init_q, init_s, init_o = init_qso_on_mesh(
+                new_mesh,
+                1.0,
+                0.5,
+                0.1,
+                0.0,
+                torch.sigmoid,
+                torch.logit(torch.tensor(0.9)),
+            )
+
+            # cano_deform_points = query_map[valid_idx, :].contiguous()[None]
+            self.query_points = new_sampled_points[None].to("cuda")
+            self.init_q = init_q.to("cuda")
+
+            num_training_frames = len(self.smpl_parms["body_pose"])
+            self.pose_t = torch.cat(
+                [self.smpl_parms["global_orient"], self.smpl_parms["body_pose"]],
+                dim=-1,
+            )
+            self.transl_t = self.smpl_parms["transl"]
+            self.hand_pose_t = torch.cat(
+                [
+                    self.smpl_parms["left_hand_pose"],
+                    self.smpl_parms["right_hand_pose"],
+                ],
+                dim=-1,
+            )
+
+            self.pose = lambda idx: self.pose_t[idx]
+            self.transl = lambda idx: self.transl_t[idx]
+            self.hand_pose = lambda idx: self.hand_pose_t[idx]
+            self.root = 0
+            self.scale = 1.0 
 
     def densify(self, factor=2):
         pass
@@ -617,7 +644,7 @@ class SMPL_Guidance(BaseObject):
                     idx = idx % len(self.smpl_parms["body_pose"])
                     idx = torch.tensor([idx]).cuda()
                     smpl_parms = {}
-                    smpl_parms["betas"] = self.smpl_parms["betas"][None]
+                    smpl_parms["betas"] = self.smpl_parms["betas"] #[None]
                     pose_out = self.pose(idx)
                     smpl_parms["body_pose"] = pose_out[..., 3:]
                     smpl_parms["global_orient"] = pose_out[..., :3]
@@ -652,8 +679,6 @@ class SMPL_Guidance(BaseObject):
                         global_orient=smpl_parms["global_orient"],
                         transl=(
                             smpl_parms["transl"]
-                            #  if not normal_crop
-                            #  else self.normal_perfect_parms["transl"][idx : idx + 1]
                         ),
                         **{
                             k: v
@@ -662,7 +687,6 @@ class SMPL_Guidance(BaseObject):
                             not in ["betas", "body_pose", "global_orient", "transl"]
                         },
                     )
-                    # breakpoint()
 
             else:
                 live_smpl = self.smpl_model.forward(
