@@ -151,9 +151,9 @@ def trans_smpl_rt(smpl_data, smpl_layer, T_cw):
 def main(
     data_dir: str,
     normal_checkpoint_path: str = osp.join(
-        osp.dirname(__file__), "../datasets/checkpoints/normal.ckpt"
+        osp.dirname(__file__), "../data/ckpt/normal.ckpt"
     ),
-    model_path: str = osp.join(osp.dirname(__file__), "../datasets/models/"),
+    model_path: str = osp.join(osp.dirname(__file__), "../data/smpl_related/models/"),
 ):
     img_dir = osp.join(data_dir, "Camera_B1")
     mask_dir = osp.join(data_dir, "mask", "Camera_B1")
@@ -185,7 +185,7 @@ def main(
         ).to(device)
 
         smpl_layer = smplx.SMPLLayer(
-            osp.join(model_path, "smpl"), kid_template_path="datasets/models/smpl/SMPL_NEUTRAL.pkl")
+            osp.join(model_path, "smpl"), kid_template_path="data/smpl_related/models/smpl/SMPL_NEUTRAL.pkl")
 
         
         annots = np.load(osp.join(data_dir, "annots.npy"), allow_pickle=True).item()

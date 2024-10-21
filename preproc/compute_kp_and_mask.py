@@ -19,7 +19,7 @@ def main(
     data_dir: str,
     openpose_dir: str,
     sam_checkpoint_path: str = osp.join(
-        osp.dirname(__file__), "../datasets/checkpoints/sam_vit_h_4b8939.pth"
+        osp.dirname(__file__), "../data/ckpt/sam_vit_h_4b8939.pth"
     ),
 ):
     img_dir = osp.join(data_dir, "images")

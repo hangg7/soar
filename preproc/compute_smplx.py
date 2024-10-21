@@ -18,7 +18,7 @@ def main(
     data_dir: str,
     smplerx_dir: str,
     # smplify-x options.
-    model_path: str = osp.join(osp.dirname(__file__), "../datasets/models/"),
+    model_path: str = osp.join(osp.dirname(__file__), "../data/smpl_related/models/"),
     debug: bool = False,
     preserve_weight: float = 60.0,
     smooth_weight: float = 10000.0,

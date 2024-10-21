@@ -34,9 +34,9 @@ from utils import transform_K_by_bbox
 def main(
     data_dir: str,
     normal_checkpoint_path: str = osp.join(
-        osp.dirname(__file__), "../datasets/checkpoints/normal.ckpt"
+        osp.dirname(__file__), "../data/ckpt/normal.ckpt"
     ),
-    model_path: str = osp.join(osp.dirname(__file__), "../datasets/models/"),
+    model_path: str = osp.join(osp.dirname(__file__), "../data/smpl_related/models/"),
 ):
     img_dir = osp.join(data_dir, "images")
     mask_dir = osp.join(data_dir, "masks")

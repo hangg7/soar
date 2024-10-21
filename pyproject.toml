@@ -15,6 +15,12 @@ dependencies = [
   "viser",
   "nerfview",
   "roma",
+  "yacs",
+  "torch",
+  "torchvision",
+  "pytorch_lightning",
+  "einops",
+  "ninja",
   "nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast/",
 ]
 

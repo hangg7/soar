@@ -1,5 +1,7 @@
 .bak
-datasets/
+build
+data
+data/
 datasets
 
 # Direnv stuffs
