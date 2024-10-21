@@ -156,7 +156,7 @@ class SMPL_Guidance(BaseObject):
         diff_config_name: str = "diffusion"
         guidance_scale: float = 15.0
 
-        smpl_model_path: str = "custom/threestudio-soar/utils/smpl_files/"
+        smpl_model_path: str = "../../data/smpl_related/models/" #"custom/threestudio-soar/utils/smpl_files/"
         smpl_type: str = "smplx"
         gender: str = "male"
         batch_size: int = 1
@@ -164,7 +164,7 @@ class SMPL_Guidance(BaseObject):
         skip: int = 4
 
         seq: str = "dance"
-        dataset: str = "neuman" #"fs-xhumans/soar" #neuman" #"insav_wild"  # "dna_rendering" #"insav_wild"
+        dataset: str = "custom" #"fs-xhumans/soar" #neuman" #"insav_wild"  # "dna_rendering" #"insav_wild"
         # cache_dir: str = "custom/threestudio-shap-e/shap-e/cache"
         num_subdiv: int = 2  # 1
 
@@ -296,7 +296,7 @@ class SMPL_Guidance(BaseObject):
                 .eval()
             )
             smpl_data = torch.load(
-                f"../../datasets/{self.cfg.dataset}/{self.cfg.seq}/smplx/params.pth"
+                f"../../data/{self.cfg.dataset}/{self.cfg.seq}/smplx/params.pth"
             )
             self.smpl_parms = {
                 "betas": smpl_data["betas"].cuda()[0],
@@ -310,7 +310,7 @@ class SMPL_Guidance(BaseObject):
                 "reye_pose": smpl_data["reye_pose"].cuda(),
                 "expression": smpl_data["expression"].cuda(),
             }
-            tpose_path = os.path.join("../../datasets", self.cfg.dataset, "..", "training", os.path.basename(self.cfg.seq), "smplx", "tpose.pkl") 
+            tpose_path = os.path.join("../../data", self.cfg.dataset, "..", "training", os.path.basename(self.cfg.seq), "smplx", "tpose.pkl") 
             import pickle
             with open(tpose_path, "rb") as f:
                 tpose = pickle.load(f)
@@ -497,7 +497,7 @@ class SMPL_Guidance(BaseObject):
                 .eval()
             )
             smpl_data = torch.load(
-                f"../../datasets/{self.cfg.dataset}/{self.cfg.seq}/smplx/params.pth"
+                f"../../data/{self.cfg.dataset}/{self.cfg.seq}/smplx/params.pth"
             )
             self.smpl_parms = {
                 "betas": smpl_data["betas"].cuda(),
