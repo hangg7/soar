@@ -32,6 +32,7 @@ SOAR requires Python 3.10 or newer.
    cd soar
    pip install -e ".[all]"
    pip install -e ./submodules/diff-gaussian-rasterization
+   pip install -e ./submodules/simple-knn
    ```
 3. **Register required models at [ICON's website](https://icon.is.tue.mpg.de/)**
 

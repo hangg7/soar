@@ -7,7 +7,7 @@ python launch.py \
     --config custom/threestudio-soar/configs/gaussiansurfel_imagedream_s0.yaml \
     --train \
     --gpu 0 \
-    data.dataroot="../../datasets/custom/$seq" \
+    data.dataroot="../../data/custom/$seq" \
     system.prompt_processor.prompt="$prompt" \
     system.geometry.geometry_convert_from="smpl:$seq" \
     data.smpl_type='smplx'\
@@ -20,7 +20,7 @@ python launch.py \
     --config custom/threestudio-soar/configs/gaussiansurfel_imagedream_s1.yaml \
     --train \
     --gpu 0 \
-    data.dataroot="../../datasets/custom/$seq" \
+    data.dataroot="../../data/custom/$seq" \
     system.prompt_processor.prompt="$prompt" \
     system.geometry.geometry_convert_from="resume:$seq:$(pwd)/outputs/exp-id-s0-org/$seq/ckpts/last.ckpt" \
     data.smpl_type='smplx'\
