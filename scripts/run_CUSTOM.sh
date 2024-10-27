@@ -23,5 +23,6 @@ python launch.py \
     system.prompt_processor.prompt="$prompt" \
     system.geometry.geometry_convert_from="resume:$seq:$(pwd)/outputs/exp-id-s0-org/$seq/ckpts/last.ckpt" \
     data.smpl_type='smplx'\
-    system.geometry.smpl_guidance_config.gender="neutral"
+    system.geometry.smpl_guidance_config.gender="neutral" 
+    # system.guidance.max_step_percent='[500, 0.75, 0.25, 501]' # This is a placeholder for the max_step_percent, which is a crucial parameter for the guidance model. The default value is '[0, 0.75, 0.25, 1000]'. You can change it to your own value.
 

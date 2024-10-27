@@ -191,16 +191,6 @@ class HashMLPSDFField(Field):
             x_offsets = torch.cat([x, z], dim=-1)
             out_offsets = self.mlp_base_offsets(x_offsets).to(positions)
             out_opacities = self.mlp_base_opacities(x).to(positions)
-            # if pose is not None:
-            #     pose = pose.reshape(-1, 23 * 3)
-            #     pose = pose.repeat(len(x), 1)
-            #     pose_feat = self.pose2feat(pose)
-            #     geo_pose = torch.cat([out_geo, pose_feat], dim=-1)
-            #     out_deform = self.geo2deform(geo_pose)
-            #     out_quat = self.geo2quat(geo_pose)
-            # else:
-            #     out_deform = torch.tensor(0.0).to(self.device)
-            #     # out_quat = torch.tensor(0.0).to(self.device)
         else:
             raise NotImplementedError
 

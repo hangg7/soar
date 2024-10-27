@@ -151,6 +151,7 @@ where `${video}` is the name of the video you want to test on, and `${ckpt_path}
     ```
     bash ./scripts/run_CUSTOM.sh
     ```
+    Some tunable hyperparameters are provided in the `./scripts/run_CUSTOM.sh` script. You can change them to perform better on your custom video.
 
 ## Status
 
@@ -165,3 +166,6 @@ This repository currently contains:
 While we've put effort into cleaning up our code for release, this is research
 code and there's room for improvement. If you have questions or comments,
 please reach out!
+
+## Acknowledgment
+This implementation is built based on [GaussianDreamer](https://github.com/hustvl/GaussianDreamer), [Gaussian Surfels](https://github.com/turandai/gaussian_surfels), [GART](https://github.com/JiahuiLei/GART), [ImageDream](https://github.com/bytedance/ImageDream), [ECON](https://github.com/YuliangXiu/ECON), [SMPLer-X](https://github.com/caizhongang/SMPLer-X). We thank the authors for their wonderful work.
