@@ -30,9 +30,10 @@ SOAR requires Python 3.10 or newer.
 2. **Install general dependencies.**
    ```bash
    cd soar
-   pip install -e ".[all]"
-   pip install -e ./submodules/diff-gaussian-rasterization
-   pip install -e ./submodules/simple-knn
+   pip install -e .
+   ```
+   Please note that after installing the package, you will find that `soar/threestudio-soar` is linked to `submodules/threestudio/custom` and `submodules/threestudio/outputs` is linked to `outputs`. If not, first go to the root folder of SOAR repo and run the following command:
+   ```bash
    ln -sf $(pwd)/soar/threestudio-soar $(pwd)/submodules/threestudio/custom/ 
    ln -sf $(pwd)/submodules/threestudio/outputs $(pwd)/outputs
    ```
