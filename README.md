@@ -86,14 +86,14 @@ SOAR requires Python 3.10 or newer.
 
 
 5. **(Optional) Download preprocessed demo data.**
-You can quickly start trying out SOAR with some preprocessed demo sequences including the pre-trained checkpoint. They can be downloaded from [Google drive](https://drive.google.com/drive/u/1/folders/todo) which are originally video clips from [Pexel](https://www.pexels.com/). Put this preprocessed demo data under the folder `data/custom` and put the folder `checkpoints` under `xxx`.
+You can quickly start trying out SOAR with some preprocessed demo sequences. They can be downloaded from [Google drive](https://drive.google.com/drive/folders/1iQoO3JZ_GZtZn3Z27Mwf4JPtqUVuvmOE) which are originally video clips from [Pexels](https://www.pexels.com/). Put the preprocessed demo data under the folder `data/custom` and unzip them.
 
 ## Training
 <!-- Before training, make sure that the `metaninfo` in the data config file `/code/confs/dataset/video.yaml` does match the expected training video. You can also continue the training by changing the flag `is_continue` in the model config file `code/confs/model/model_w_bg`. And then run: -->
 ```
 bash ./scripts/run_${video}.sh
 ```
-where `${video}` is the name of the video you want to train on. The training script will train the model, and save the checkpoints in the `outputs` folder. The training usually takes around 30 minutes on a NVIDIA RTX A5000. The validation results can be found at `outputs/`.
+where `${video}` is the name of the video you want to train on. The training script will train the model, and save the checkpoints in the `outputs` folder. Training typically takes about 40 minutes on an NVIDIA RTX A5000, though the duration may vary based on video length, resolution, and the number of epochs specified in the training script. The checkpoints will be saved in the `outputs/exp-id-${stage}-org/${video}/ckpts` folder.
 
 ## Testing
 
@@ -151,7 +151,7 @@ where `${video}` is the name of the video you want to test on, and `${ckpt_path}
     ```
     bash ./scripts/run_CUSTOM.sh
     ```
-    Some tunable hyperparameters are provided in the `./scripts/run_CUSTOM.sh` script. You can change them to perform better on your custom video.
+    Some tunable hyperparameters are provided in the `./scripts/run_CUSTOM.sh` script. You can change them for better performance on your custom video.
 
 ## Status
 
@@ -163,9 +163,7 @@ This repository currently contains:
 - Testing script. Novel pose rendering script in progress.
 - Dataset preprocessing script.
 
-While we've put effort into cleaning up our code for release, this is research
-code and there's room for improvement. If you have questions or comments,
-please reach out!
+We are still working on building up a cleanest and most efficient codebase for SOAR. Please stay tuned for more updates.
 
 ## Acknowledgment
 This implementation is built based on [GaussianDreamer](https://github.com/hustvl/GaussianDreamer), [Gaussian Surfels](https://github.com/turandai/gaussian_surfels), [GART](https://github.com/JiahuiLei/GART), [ImageDream](https://github.com/bytedance/ImageDream), [ECON](https://github.com/YuliangXiu/ECON), [SMPLer-X](https://github.com/caizhongang/SMPLer-X). We thank the authors for their wonderful work.

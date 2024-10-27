@@ -101,7 +101,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         comp_bg = gt_out["comp_bg"]
 
         save_dir = self.get_save_dir()
-        if iteration % 50 == 0:
+        if iteration % 250 == 0:
             test_dir = os.path.join(save_dir, f"test_{iteration}")
             os.makedirs(test_dir, exist_ok=True)
             rendered_out = torch.cat([gt_out["comp_rgb"], batch["gt_rgb"]], dim=0)

@@ -1,5 +1,5 @@
-seq="4540332"
-prompt="A woman wearing a black sweater, gray cropped pants, black sneakers"
+seq="2795752"
+prompt="A man with a black T-shirt, black pants, and black shoes with red soles."
 echo -e "Running Stage 0"
 
 cd ./submodules/threestudio
@@ -23,5 +23,4 @@ python launch.py \
     system.prompt_processor.prompt="$prompt" \
     system.geometry.geometry_convert_from="resume:$seq:$(pwd)/outputs/exp-id-s0-org/$seq/ckpts/last.ckpt" \
     data.smpl_type='smplx'\
-    system.geometry.smpl_guidance_config.gender="neutral"
-
+    system.geometry.smpl_guidance_config.gender="neutral" 

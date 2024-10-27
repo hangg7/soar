@@ -288,7 +288,6 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
         self,
         viewpoint_camera,
         bg_color: torch.Tensor,
-        pc=None,
         patch_size: list = [float("inf"), float("inf")],
         scaling_modifier=1.0,
         override_color=None,
@@ -317,7 +316,6 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
                         points, smpl_parms=kwargs["gt_a_smpl"], zero_out=True
                     )
             else:
-                print("[Warning] No gt_a_smpl with idx", idx)
                 root, mat, scale = self.geometry.smpl_guidance(
                     points, idx=idx, zero_out=True
                 )
@@ -331,14 +329,10 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             (
                 attribute_color,
                 attribute_scale,
-                attribute_opacity,
-                attribute_quat,
                 attribute_offsets,
             ) = (
                 points_attributes["shs"],
                 points_attributes["scales"],
-                points_attributes["opacities"],
-                points_attributes["quats"],
                 points_attributes["offsets"],
             )
             points = (
@@ -347,7 +341,6 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             )[0]
             if self.cfg.offset:
                 points = points + attribute_offsets
-                print("offset", attribute_offsets)
             points, T = transform_point_cloud(points, "+z,+x,+y")
             rot_mat = quaternion_to_matrix(rot)
             rot_mat = torch.matmul(mat[..., :3, :3], rot_mat)
@@ -370,14 +363,10 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             (
                 attribute_color,
                 attribute_scale,
-                attribute_opacity,
-                attribute_quat,
                 attribute_offsets,
             ) = (
                 points_attributes["shs"],
                 points_attributes["scales"],
-                points_attributes["opacities"],
-                points_attributes["quats"],
                 points_attributes["offsets"],
             )
 
