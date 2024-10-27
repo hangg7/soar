@@ -439,57 +439,7 @@ class SMPL_Guidance(BaseObject):
 
             self.pose = lambda idx: self.pose_t[idx]
             self.transl = lambda idx: self.transl_t[idx]
-            self.hand_pose = lambda idx: self.hand_pose_t[idx]
-        elif self.cfg.dataset == 'zju-mocap':
-            model_path = os.path.join(self.cfg.smpl_model_path, "smpl")
-            self.smpl_model = (
-                SMPL(
-                    model_path=model_path,
-                    gender="neutral",
-                    use_pca=False,
-                    use_face_contour=True,
-                ).cuda().eval()
-            )
-            smpl_data = torch.load(
-                f"data/zju-mocap/CoreView_{self.cfg.seq}/params.pth"
-            )
-            self.smpl_parms = smpl_data
-            self.smpl_parms_ = smpl_data
-            leg_angle = 30
-            smplx_cpose_param = torch.zeros(1, 72).cuda()
-            smplx_cpose_param[:, 5] = leg_angle / 180 * math.pi
-            smplx_cpose_param[:, 8] = -leg_angle / 180 * math.pi
-            cano_smpl = self.smpl_model.forward(
-                betas=self.smpl_parms["betas"][0][None],
-                global_orient=smplx_cpose_param[:, :3],
-                transl=torch.tensor([[0, 0.30, 0]]).cuda(),
-                body_pose=smplx_cpose_param[:, 3:],
-            )
-            self.inv_mats = torch.linalg.inv(cano_smpl.A.detach())
-            self.ori_lbs = self.smpl_model.lbs_weights[None]
-            self.cano_vertices = cano_smpl.vertices[0].detach()
-            
-            verts, faces, uvs, uv_faces = load_obj_mesh(
-                "custom/threestudio-soar/utils/assets/template_mesh_smpl_uv.obj",
-                with_texture=True,
-            )
-            new_sampled_points, new_mesh = init_xyz_on_mesh(
-                self.cano_vertices, faces, self.cfg.num_subdiv
-            )
-            init_q, init_s, init_o = init_qso_on_mesh(
-                new_mesh,
-                1.0,
-                0.5,
-                0.1,
-                0.0,
-                torch.sigmoid,
-                torch.logit(torch.tensor(0.9)),
-            )
-
-            self.query_points = new_sampled_points[None].to("cuda")
-            self.init_q = init_q.to("cuda")
-            self.root = 0
-            self.scale = 1.0
+            self.hand_pose = lambda idx: self.hand_pose_t[idx] 
         else:
             self.smpl_model = (
                 SMPLX(
