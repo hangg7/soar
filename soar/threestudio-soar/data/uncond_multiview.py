@@ -776,7 +776,7 @@ class ValDataset(Dataset):
             self.index_list = val_list
         elif split_type == "test":
             self.index_list = test_list
-        # self.index_list = [0, 1, 2, 3, 4, 5, 6, 7]
+
         frames_img = []
         frames_mask = []
         frames_normal_F = []

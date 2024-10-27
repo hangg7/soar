@@ -96,11 +96,15 @@ bash ./scripts/run_${video}.sh
 where `${video}` is the name of the video you want to train on. The training script will train the model, and save the checkpoints in the `outputs` folder. The training usually takes around 30 minutes on a NVIDIA RTX A5000. The validation results can be found at `outputs/`.
 
 ## Testing
-Run the following command to obtain the novel view rendering results.
+
+We have provided a minimal set of code to infererence the trained model. The code is located at `soar/threestudio-soar/test/`. You could easily add more features to the code to fit your needs.
+
+To obtain the 360-degree rotation video, you can run the following command:
 ```
 python soar/threestudio-soar/test/render_rot.py --seq_name ${video} --ckpt_path ${ckpt_path}
 ```
 where `${video}` is the name of the video you want to test on, and `${ckpt_path}` is the path to the checkpoint you want to test on. The results will be saved in the `outputs/test/${video}` folder.
+
 
 ## Play on custom video
 1. **Install OpenPose and SMPLify-X.**
@@ -155,7 +159,7 @@ This repository currently contains:
 - `soar` package, which contains reference training and sampling implementation details.
 - Setup instructions.
 - Training script.
-- Testing script.
+- Testing script. Novel pose rendering script in progress.
 - Dataset preprocessing script.
 
 While we've put effort into cleaning up our code for release, this is research
