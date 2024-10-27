@@ -11,25 +11,12 @@ from diff_gaussian_rasterization import (
     GaussianRasterizer,
 )
 from pytorch3d.transforms import (
+    axis_angle_to_matrix,
+    matrix_to_axis_angle,
     matrix_to_quaternion,
     quaternion_to_matrix,
 )
-from torchvision.utils import save_image
-
-import threestudio
-from threestudio.models.background.base import BaseBackground
-from threestudio.models.geometry.base import BaseGeometry
-from threestudio.models.materials.base import BaseMaterial
-from threestudio.models.renderers.base import Rasterizer
-
-from threestudio.utils.typing import *
-
-# import os
-# import sys
-# print(os.path.dirname(__file__))
-# sys.path.append(os.path.dirname(__file__))
-
-from .gaussian_batch_renderer import GaussianBatchRenderer
+from torch import nn
 
 
 def transform_point_cloud(xyz, dirs):
@@ -246,56 +233,32 @@ class Depth2Normal(torch.nn.Module):
         normal = -torch.cross(delzdelx, delzdely, dim=1)
         return normal
 
-def safe_register(name):
-    def decorator(cls):
-        if name in threestudio.__modules__:
-            print(f"Module '{name}' is already registered. Skipping re-registration.")
-            return cls
-        # Apply the original registration decorator if not already registered
-        return threestudio.register(name)(cls)
-    return decorator
 
-# @threestudio.register("gaussiansurfel-rasterizer")
-@safe_register("gaussiansurfel-rasterizer")
-class DiffGaussian(Rasterizer, GaussianBatchRenderer):
-    @dataclass
-    class Config(Rasterizer.Config):
-        debug: bool = False
-        invert_bg_prob: float = 1.0
-        back_ground_color: Tuple[float, float, float] = (1, 1, 1)
-        offset: bool = False
-        use_explicit: bool = False
+class DiffGaussianRasterizer(nn.Module):
 
-    cfg: Config
-
-    def configure(
-        self,
-        geometry: BaseGeometry,
-        material: BaseMaterial,
-        background: BaseBackground,
-    ) -> None:
-        threestudio.info(
-            "[Note] Gaussian Splatting doesn't support material and background now."
-        )
-        super().configure(geometry, material, background)
+    def __init__(self, offset=False, use_explicit=False):
+        super().__init__()
         self.background_tensor = torch.tensor(
-            self.cfg.back_ground_color, dtype=torch.float32, device="cuda"
+            (1, 1, 1), dtype=torch.float32, device="cuda"
         )
         self.normal_module = Depth2Normal()
         self.glctx = dr.RasterizeGLContext()
+        self.offset = offset
+        self.use_explicit = use_explicit
 
+    @torch.no_grad()
     def forward(
         self,
+        pc,
         viewpoint_camera,
         bg_color: torch.Tensor,
-        pc=None,
         patch_size: list = [float("inf"), float("inf")],
         scaling_modifier=1.0,
-        override_color=None,
-        gt=False,
         render_front=True,
-        #  normal_crop=False,
         stage=0,
+        smpl_parms=None,
+        pose=None,
+        points_attributes=None,
         **kwargs,
     ):
         """
@@ -304,100 +267,54 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
         Background tensor (bg_color) must be on GPU!
         """
         # bg_color *= 0
-        pc = self.geometry
 
         points = pc.get_xyz
         rot = pc.get_rotation
 
-        if not gt:
-            idx = kwargs.get("gt_index")
-            if "gt_a_smpl" in kwargs:
-                with torch.no_grad():
-                    root, mat, scale = self.geometry.smpl_guidance(
-                        points, smpl_parms=kwargs["gt_a_smpl"], zero_out=True
-                    )
-            else:
-                print("[Warning] No gt_a_smpl with idx", idx)
-                root, mat, scale = self.geometry.smpl_guidance(
-                    points, idx=idx, zero_out=True
-                )
-            if idx is None:
-                points_attributes = pc.attribute_field(points.detach())
-            else:
-                idx = idx % len(pc.smpl_guidance.smpl_parms["body_pose"])
-                points_attributes = pc.attribute_field(
-                    points.detach(), #z=pc.latent_pose[idx]
-                )
-            (
-                attribute_color,
-                attribute_scale,
-                attribute_opacity,
-                attribute_quat,
-                attribute_offsets,
-            ) = (
-                points_attributes["shs"],
-                points_attributes["scales"],
-                points_attributes["opacities"],
-                points_attributes["quats"],
-                points_attributes["offsets"],
-            )
-            points = (
-                torch.einsum("bnxy,bny->bnx", mat[..., :3, :3], points[None])
-                + mat[..., :3, 3]
-            )[0]
-            if self.cfg.offset:
-                points = points + attribute_offsets
-                print("offset", attribute_offsets)
-            points, T = transform_point_cloud(points, "+z,+x,+y")
-            rot_mat = quaternion_to_matrix(rot)
-            rot_mat = torch.matmul(mat[..., :3, :3], rot_mat)
-            rot_mat = torch.matmul(T.T, rot_mat)
-            rot = matrix_to_quaternion(rot_mat)
-            rot = torch.nn.functional.normalize(rot, p=2, dim=-1)[0]
-        else:
-            if "gt_a_smpl" in kwargs:
-                with torch.no_grad():
-                    root, mat, scale = self.geometry.smpl_guidance(
-                        points, smpl_parms=kwargs["gt_a_smpl"])
-            else:
-                root, mat, scale = self.geometry.smpl_guidance(
-                    points,
-                    idx=kwargs["gt_index"],
-                )
-            points_attributes = pc.attribute_field(
-                points.detach(), z=None
-            )
-            (
-                attribute_color,
-                attribute_scale,
-                attribute_opacity,
-                attribute_quat,
-                attribute_offsets,
-            ) = (
-                points_attributes["shs"],
-                points_attributes["scales"],
-                points_attributes["opacities"],
-                points_attributes["quats"],
-                points_attributes["offsets"],
-            )
-
-            points = (
-                torch.einsum("bnxy,bny->bnx", mat[..., :3, :3], points[None])
-                + mat[..., :3, 3]
-            )[0]
-
-            if self.cfg.offset:
-                points = points + attribute_offsets
-                print("offset", attribute_offsets)
-            rot_mat = quaternion_to_matrix(rot)
-            rot_mat = torch.matmul(mat[..., :3, :3], rot_mat)
-            # _, T = transform_point_cloud(points, "-x,+y,+z")
-            # rot_mat = torch.matmul(T.T, rot_mat)
-            rot = matrix_to_quaternion(rot_mat)
-            rot = torch.nn.functional.normalize(rot, p=2, dim=-1)[0]
+        mat = pc.smpl_guidance(
+            points, smpl_parms=smpl_parms,
+        )
+        points_attributes = pc.attribute_field(
+            points.detach()  # , z=pc.latent_pose[kwargs["gt_index"]]
+        )
+        (
+            attribute_color,
+            attribute_scale,
+            attribute_opacity,
+            attribute_quat,
+            attribute_offsets,
+        ) = (
+            points_attributes["shs"],
+            points_attributes["scales"],
+            points_attributes["opacities"],
+            points_attributes["quats"],
+            points_attributes["offsets"],
+        )
+        # if stage == 1:
+        #     rot = attribute_quat.clone()
+        points = (
+            torch.einsum("bnxy,bny->bnx", mat[..., :3, :3], points[None])
+            + mat[..., :3, 3]
+        )[0]
+        if self.offset:
+            points = points + attribute_offsets
+            print("offset", attribute_offsets)
+        rot_mat = quaternion_to_matrix(rot)
+        rot_mat = torch.matmul(mat[..., :3, :3], rot_mat)
+        rot = matrix_to_quaternion(rot_mat)
+        rot = torch.nn.functional.normalize(rot, p=2, dim=-1)[0]
+        if not render_front:
+            ref_z = pc.smpl_guidance.smpl_parms["transl"][kwargs["gt_index"], -1]
+            points[:, 2] = 2 * ref_z - points[:, 2]
             
-            if not self.training:
-                bg_color = torch.ones_like(bg_color)
+        # if True: #not self.training:
+        #     # for FS-Human
+        #     points = (points - pc.smpl_guidance.root) * 0.5
+        #     points[..., 0] = -points[..., 0]
+            
+        #     normal = quaternion2rotmat(rot)[..., 2]
+        #     normal[..., 0] *= -1
+        #     rot = normal2rotation(normal, normalize=True)
 
         # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
         screenspace_points = (
@@ -433,7 +350,8 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             campos=viewpoint_camera.camera_center,
             prefiltered=False,
             render_front=False,  # render_front,
-            sort_descending=not render_front,
+            #  render_front=True,  # render_front,
+            sort_descending=False,
             debug=False,
             config=pc.config,
         )
@@ -443,7 +361,7 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             image_width=int(viewpoint_camera.image_width),
             tanfovx=tanfovx,
             tanfovy=tanfovy,
-            bg=bg_color,
+            bg=bg_color * 0,
             scale_modifier=scaling_modifier,
             viewmatrix=viewpoint_camera.world_view_transform,
             projmatrix=viewpoint_camera.full_proj_transform,
@@ -461,6 +379,11 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         rasterizer_occ = GaussianRasterizer(raster_settings=raster_settings_occ)
 
+        #  import viser
+
+        #  server = viser.ViserServer(port=30037)
+        #  server.add_point_cloud("/pc", points.cpu().numpy(), colors=(0, 0, 255))
+        #  __import__("ipdb").set_trace()
         means3D = points
         means2D = screenspace_points
         opacity = pc.get_opacity
@@ -472,25 +395,38 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
         # if pipe.compute_cov3D_python:
         #     cov3D_precomp = pc.get_covariance(scaling_modifier)
         # else:
-        if self.cfg.use_explicit:
-            scales = pc.get_scaling.repeat(1, 3)
-        else:
-            scales = attribute_scale.repeat(1, 3)  #
-        
-        # For FS-Human
-        # if gt: 
-        #     scales *= scale
-        
-        scales[..., -1] = -1e10
+        #
+        # scales = pc.get_scaling.repeat(1,3) #attribute_scale.repeat(1, 3)
+        # scales[..., -1] = -1e10
         rotations = rot
+        # print(pc._scaling)
+        # print(scales)
+        # # print(rotations)
+        # exit()
+
         # If precomputed colors are provided, use them. Otherwise, if it is desired to precompute colors
         # from SHs in Python, do it. If not, then SH -> RGB conversion will be done by rasterizer.
         shs = None
         colors_precomp = None
-        if self.cfg.use_explicit:
+        # if override_color is None:
+        #     # if pipe.convert_SHs_python:
+        #     #     shs_view = pc.get_features.transpose(1, 2).view(-1, 3, (pc.max_sh_degree+1)**2)
+        #     #     dir_pp = (pc.get_xyz - viewpoint_camera.camera_center.repeat(pc.get_features.shape[0], 1))
+        #     #     dir_pp_normalized = dir_pp/dir_pp.norm(dim=1, keepdim=True)
+        #     #     sh2rgb = eval_sh(pc.active_sh_degree, shs_view, dir_pp_normalized)
+        #     #     colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
+        #     # else:
+        #     shs = pc.get_features
+        # else:
+        #     colors_precomp = override_color
+        if self.use_explicit:
             colors_precomp = pc.get_colors
+            scales = pc.get_scaling.expand(-1, 3)
         else:
             colors_precomp = attribute_color
+            scales = attribute_scale.expand(-1, 3)
+        # scales = scales * 0.5
+        # print('scales', scales.shape, 'colors_precomp', colors_precomp.shape)
         # colors_precomp = pc.get_colors #attribute_color
 
         # Rasterize visible Gaussians to image, obtain their radii (on screen).
@@ -540,18 +476,30 @@ class DiffGaussian(Rasterizer, GaussianBatchRenderer):
             cov3D_precomp=cov3D_precomp,
         )
         # breakpoint()
-        mask = rendered_opac > 1e-5
-        normal_mask = mask.repeat(3, 1, 1)
-        rendered_normal[~normal_mask] = rendered_normal[~normal_mask].detach()
+        # mask = rendered_opac > 1e-5
+        normal_mask = rendered_opac.repeat(3, 1, 1)
+        # rendered_normal[~normal_mask] = rendered_normal[~normal_mask].detach()
         rendered_normal[1] *= -1
         rendered_normal[2] *= -1
         curv = normal2curv(rendered_normal, rendered_opac.detach() > 1e-5)
         rendered_normal = (rendered_normal + 1) / 2
+        rendered_normal = rendered_normal * normal_mask + (1 - normal_mask)
         depth_normal = depth2normal(
             rendered_depth, rendered_opac.detach() > 1e-5, viewpoint_camera
         )
         depth_normal[1:] *= -1
         depth_normal = (depth_normal + 1) / 2
+
+        # if not gt:
+        #     batch_idx = kwargs["batch_idx"]
+        #     rays_d = kwargs["rays_d"][batch_idx]
+        #     rays_o = kwargs["rays_o"][batch_idx]
+        #     comp_rgb_bg = self.background(dirs=rays_d.unsqueeze(0))
+        #     _, H, W = rendered_image.shape
+
+        #     rendered_image = rendered_image + (1 - rendered_opac) * comp_rgb_bg.reshape(
+        #         H, W, 3
+        #     ).permute(2, 0, 1)
 
         # Those Gaussians that were frustum culled or had a radius of 0 were not visible.
         # They will be excluded from value updates used in the splitting criteria.
@@ -685,4 +633,3 @@ def normal2rotation(n, normalize=False):
     q = matrix_to_quaternion(R)
 
     return q
-

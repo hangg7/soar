@@ -35,6 +35,7 @@ dependencies = [
   "nerfstudio",
   "ninja",
   "lpips",
+  "open-clip-torch==2.7.0",
   "mvdream @ git+https://github.com/bytedance/MVDream",
   "imagedream @ git+https://github.com/bytedance/ImageDream/#subdirectory=extern/ImageDream",
   "nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast/",

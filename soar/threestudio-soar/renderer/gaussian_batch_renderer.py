@@ -1,14 +1,10 @@
 import math
 import random
 
-import numpy as np
 import torch
 from torch.cuda.amp import autocast
-from torchvision.utils import save_image
 
-from threestudio.utils.ops import get_cam_info_gaussian
-
-from ..geometry.gaussian_base import BasicPointCloud, Camera
+from ..geometry.gaussian_base import Camera
 
 
 class GaussianBatchRenderer:

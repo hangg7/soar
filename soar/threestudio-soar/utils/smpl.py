@@ -12,10 +12,7 @@ import torch.nn.functional as F
 import trimesh
 from pytorch3d.ops import knn_points
 from pytorch3d.transforms import (
-    axis_angle_to_matrix,
-    matrix_to_axis_angle,
     matrix_to_quaternion,
-    quaternion_to_matrix,
 )
 
 import threestudio
@@ -145,8 +142,17 @@ def init_qso_on_mesh(
     ret_o = torch.ones_like(v_init[:, :1]) * opacity_base_logit
     return ret_q, ret_s, ret_o
 
+def safe_register(name):
+    def decorator(cls):
+        if name in threestudio.__modules__:
+            print(f"Module '{name}' is already registered. Skipping re-registration.")
+            return cls
+        # Apply the original registration decorator if not already registered
+        return threestudio.register(name)(cls)
+    return decorator
 
-@threestudio.register("smpl-guidance")
+# Use the safe_register decorator instead of @threestudio.register
+@safe_register("smpl-guidance")
 class SMPL_Guidance(BaseObject):
     @dataclass
     class Config(BaseObject.Config):

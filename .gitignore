@@ -3,6 +3,8 @@ build
 data
 data/
 datasets
+dist
+outputs
 
 # Direnv stuffs
 .direnv

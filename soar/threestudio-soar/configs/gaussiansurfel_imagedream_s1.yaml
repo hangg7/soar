@@ -1,7 +1,7 @@
 name: "exp-id-s1-org"
 tag: "${basename:${data.dataroot}}_${rmspace:${system.prompt_processor.prompt},_}"
 exp_root_dir: "outputs"
-seed: 0
+# seed: 0
 
 data_type: "mvdream-random-multiview-camera-datamodule"
 data:
@@ -18,6 +18,7 @@ data:
   center_perturb: 0.
   up_perturb: 0.
   n_val_views: 4
+  n_test_views: 10
   eval_camera_distance: 3.0
   eval_fovy_deg: 40.
   rays_d_normalize: false
@@ -89,7 +90,7 @@ system:
     ckpt_path: null # path to a pre-downloaded checkpoint file (null for loading from URL)
     guidance_scale: 5.0
     min_step_percent: 0.02 # (start_iter, start_val, end_val, end_iter)
-    max_step_percent: [500, 0.75, 0.25, 501] #[500, 0.75, 0.25, 501]
+    max_step_percent: [0, 0.75, 0.25, 1000] #[500, 0.75, 0.25, 501]
     recon_loss: true
     recon_std_rescale: 0.2 #5
 

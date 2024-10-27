@@ -33,6 +33,8 @@ SOAR requires Python 3.10 or newer.
    pip install -e ".[all]"
    pip install -e ./submodules/diff-gaussian-rasterization
    pip install -e ./submodules/simple-knn
+   ln -sf $(pwd)/soar/threestudio-soar $(pwd)/submodules/threestudio/custom/ 
+   ln -sf $(pwd)/submodules/threestudio/outputs $(pwd)/outputs
    ```
 3. **Register required models at [ICON's website](https://icon.is.tue.mpg.de/)**
 
@@ -81,33 +83,28 @@ SOAR requires Python 3.10 or newer.
 
     </details>
 
-## Download preprocessed demo data
-You can quickly start trying out SOAR with a preprocessed demo sequence including the pre-trained checkpoint. This can be downloaded from [Google drive](https://drive.google.com/drive/u/1/folders/todo) which is originally a video clip provided by [Pexel](https://github.com/todo). Put this preprocessed demo data under the folder `data/custom` and put the folder `checkpoints` under `xxx`.
+
+5. **(Optional) Download preprocessed demo data.**
+You can quickly start trying out SOAR with some preprocessed demo sequences including the pre-trained checkpoint. They can be downloaded from [Google drive](https://drive.google.com/drive/u/1/folders/todo) which are originally video clips from [Pexel](https://www.pexels.com/). Put this preprocessed demo data under the folder `data/custom` and put the folder `checkpoints` under `xxx`.
 
 ## Training
 <!-- Before training, make sure that the `metaninfo` in the data config file `/code/confs/dataset/video.yaml` does match the expected training video. You can also continue the training by changing the flag `is_continue` in the model config file `code/confs/model/model_w_bg`. And then run: -->
 ```
-ln -sf $(pwd)/soar/threestudio-soar $(pwd)/submodules/threestudio/custom/ 
 bash ./scripts/run_${video}.sh
 ```
 where `${video}` is the name of the video you want to train on. The training script will train the model, and save the checkpoints in the `outputs` folder. The training usually takes around 30 minutes on a NVIDIA RTX A5000. The validation results can be found at `outputs/`.
 
-The training usually takes around 30 minutes on a NVIDIA RTX A5000. The validation results can be found at `outputs/`.
 ## Testing
-Run the following command to obtain the final outputs. By default, this loads the latest checkpoint.
+Run the following command to obtain the novel view rendering results.
 ```
-python render.py
+python soar/threestudio-soar/test/render_rot.py --seq_name ${video} --ckpt_path ${ckpt_path}
 ```
+where `${video}` is the name of the video you want to test on, and `${ckpt_path}` is the path to the checkpoint you want to test on. The results will be saved in the `outputs/test/${video}` folder.
 
 ## Play on custom video
 1. **Install OpenPose and SMPLify-X.**
     
     Follow the instructions at [OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) and [SMPLify-X](https://github.com/caizhongang/SMPLer-X) to install the required dependencies.
-
-2. **Setup OPENAI API.**
-
-    You need to setup the OpenAI API to use the VQGAN model. Follow the instructions at [OpenAI API](https://beta.openai.com/docs/developer-quickstart/).
-
 
 2. **Preprocess custom videos.**
 
@@ -119,10 +116,11 @@ python render.py
         --openpose-dir /path/to/openpose/ \
         --smplerx-dir /path/to/smplerx/
     ```
+    Note that we also have a smoothing hyperparameter `--smooth_weight` which can be used to smooth the smplerx output. The default value is 10000. If this high value makes the output too smooth to be accurate, you can try to lower it to 100 or 0.
 
     It takes around 30 mins for 400 frames or some big 2K-4K images. For dance_0 it takes around 8 mins.
 
-    Proprocessed data look like this:
+    Proprocessed data should be saved in the following structure:
 
     ```
     - VIDEO
@@ -136,6 +134,19 @@ python render.py
         - video.mp4
     ```
 
+
+3. **Setup training script.**
+
+    You need to setup the training script by modifying the `./scripts/run_CUSTOM.sh` script. You need to change the `seq_name` to the name of your video(which is the name of the folder in `data/custom`)
+    , and the `prompt` to the prompt you want to use.
+
+4. **Run training script.**
+    
+    Run the following command to train the model on your custom video.
+    ```
+    bash ./scripts/run_CUSTOM.sh
+    ```
+
 ## Status
 
 This repository currently contains:
@@ -143,10 +154,8 @@ This repository currently contains:
 - `soar` package, which contains reference training and sampling implementation details.
 - Setup instructions.
 - Training script.
-- Testing script.(WIP)
-- Dataset preprocessing script.(WIP)
-- Inference script.(WIP)
-- Visualization script.(WIP)
+- Testing script.
+- Dataset preprocessing script.
 
 While we've put effort into cleaning up our code for release, this is research
 code and there's room for improvement. If you have questions or comments,

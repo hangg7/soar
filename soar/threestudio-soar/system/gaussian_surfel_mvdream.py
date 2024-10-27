@@ -29,7 +29,7 @@ from skimage.metrics import structural_similarity as ski_ssim
 import lpips
 
 loss_fn_alex = lpips.LPIPS(net='alex').cuda()
-loss_fn_test_vgg = lpips.LPIPS(net='vgg', version='0.1').cuda()
+loss_fn_test_vgg = lpips.LPIPS(net='vgg', version='0.1')
 
 def scale_gradients_hook(grad, mask=None):
     grad_copy = grad.clone()  # Make a copy to avoid in-place modifications
@@ -71,15 +71,6 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
 
     def configure_optimizers(self):
         optim = self.geometry.optimizer
-        # if hasattr(self, "merged_optimizer"):
-        #     return [optim]
-        # if hasattr(self.cfg.optimizer, "name"):
-        #     net_optim = parse_optimizer(self.cfg.optimizer, self)
-        #     # optim = self.geometry.merge_optimizer(net_optim)
-        #     breakpoint()
-        #     self.merged_optimizer = True
-        # else:
-        #     self.merged_optimizer = False
         bg_optim = torch.optim.Adam(
             self.background.parameters(),
             lr=self.cfg.optimizer.params.background.lr,
@@ -568,27 +559,8 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         # if gt_viewspace_point_tensor[0].grad is not None:
 
         if loss > 0:
-            # print("Optimizing loss with loss recon: ", loss_recon)
-            # if iteration < 200:
-            #     loss = loss_occ
-            loss.backward()  # retain_graph=True)
-            # print('iter: ', iteration, 'gt_view_space_points: ', gt_viewspace_point_tensor[0].grad)
-            # self.geometry.update_states(
-            #     iteration,
-            #     gt_visibility_filter,
-            #     gt_radii,
-            #     gt_viewspace_point_tensor,
-            # )
-            # if viewspace_point_tensor[0].grad is not None:
-            #     self.geometry.update_states(
-            #         iteration,
-            #         visibility_filter,
-            #         radii,
-            #         viewspace_point_tensor,
-            #     )
-        # if iteration % 50 == 0:
-        #     breakpoint()
-        # for opti in opt:
+            loss.backward()
+
         opt.step()
         opt.zero_grad(set_to_none=True)
         # pose_optimizer.zero_grad(set_to_none=True)
@@ -696,7 +668,8 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         #     clean_mask = grid_mask  # * mask_mask
         #     pts = pts[clean_mask]
         #     self.resampled.append(pts)
-        out, gt_out = self(batch)
+        # breakpoint()
+        
         # rgb_dir = os.path.join(
         #     self.get_save_dir(), "test", f"cam_{str(batch_idx).zfill(2)}", "rgb"
         # )
@@ -733,7 +706,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         #         os.path.join(occ_dir, f"{str(i).zfill(5)}.png"),
         #     )
 
-        
+        out, gt_out = self(batch)
         pred = gt_out["comp_rgb"][0].detach().cpu().numpy()
         gt = batch["gt_rgb"][0].detach().cpu().numpy()
         gt_mask = batch["gt_mask"][0].detach().cpu().numpy()
@@ -765,10 +738,11 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         self.psnrs.append(psnr_)
         ssim_ = ski_ssim(pred,gt, multichannel=True, channel_axis=-1, data_range=1)
         self.ssims.append(ssim_)
-        lpips_ = loss_fn_test_vgg(
-            torch.from_numpy(pred)[None].cuda().permute(0, 3, 1, 2) * 2 - 1, 
-            torch.from_numpy(gt)[None].cuda().permute(0, 3, 1, 2) * 2 - 1).mean()
-        self.lpips.append(lpips_)
+        with torch.no_grad():
+            lpips_ = loss_fn_test_vgg(
+                torch.from_numpy(pred)[None].permute(0, 3, 1, 2) * 2 - 1, 
+                torch.from_numpy(gt)[None].permute(0, 3, 1, 2) * 2 - 1).mean()
+            self.lpips.append(lpips_)
         print("PSNR: ", psnr_, "SSIM: ", ssim_, "LPIPS: ", lpips_)
         # if batch["index"][0] == 0:
         #     save_path = self.get_save_path("point_cloud.ply")
