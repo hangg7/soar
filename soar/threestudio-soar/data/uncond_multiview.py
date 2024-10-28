@@ -351,10 +351,7 @@ class RandomMultiviewCameraIterableDataset(RandomCameraIterableDataset):
         # gt_index = torch.randint(0, self.n_frames, (1,)).item()
         gt_index = torch.randint(0, len(self.index_list), (1,)).item()
         gt_index = self.index_list[gt_index]
-        # print("c2w", c2w.shape, c2w);
-        # print("proj_mtx", proj_mtx.shape, proj_mtx);
-        # gt_c2w = torch.eye(4, device=c2w.device).unsqueeze(0)
-        # gt_c2w[:, :3, 3] += torch.tensor([0.0, 0.0, 0.8], device=c2w.device)
+
         gt_c2w = torch.inverse(self.extrinsic).unsqueeze(0).to(c2w.device)
         # gt_c2w[:3, 1:3] *= -1
         if self.cfg.smpl_type == "smpl":
@@ -373,14 +370,9 @@ class RandomMultiviewCameraIterableDataset(RandomCameraIterableDataset):
         gt_fovx = torch.tensor(gt_fovx, device=c2w.device).unsqueeze(0)
         gt_width = self.gt_width
         gt_height = self.gt_height
-        gt_cx = torch.tensor(gt_cx, device=c2w.device).unsqueeze(0)
-        gt_cy = torch.tensor(gt_cy, device=c2w.device).unsqueeze(0)
-        # gt_fovy = torch.tensor(90.0, device=c2w.device).unsqueeze(0)
-        # gt_fovy = torch.deg2rad(gt_fovy)
-        # gt_height = 512
-        # gt_width = 512
-        # gt_fovx = 2 * torch.atan(torch.tan(gt_fovy / 2) * self.width / self.height)
-        gt_focal_length = 0.5 * gt_height / torch.tan(0.5 * gt_fovy)
+        gt_cx = gt_cx.unsqueeze(0)
+        gt_cy = gt_cy.unsqueeze(0)
+        
         gt_near = 0.1
         if self.cfg.smpl_type == "smplx":
             gt_near = self.smpl_parms["transl"][gt_index][-1].item() - 5.0
@@ -406,10 +398,10 @@ class RandomMultiviewCameraIterableDataset(RandomCameraIterableDataset):
         gt_normal_cy = self.normal_intrinsics[gt_index, 1, 2]
         gt_normal_fovy = 2 * torch.atan(gt_normal_res / (2 * gt_normal_fy))
         gt_normal_fovx = 2 * torch.atan(gt_normal_res / (2 * gt_normal_fx))
-        gt_normal_fovy = torch.tensor(gt_normal_fovy, device=c2w.device).unsqueeze(0)
-        gt_normal_fovx = torch.tensor(gt_normal_fovx, device=c2w.device).unsqueeze(0)
-        gt_normal_cx = torch.tensor(gt_normal_cx, device=c2w.device).unsqueeze(0)
-        gt_normal_cy = torch.tensor(gt_normal_cy, device=c2w.device).unsqueeze(0)
+        gt_normal_fovx = gt_normal_fovx.unsqueeze(0)
+        gt_normal_fovy = gt_normal_fovy.unsqueeze(0)
+        gt_normal_cx = gt_normal_cx.unsqueeze(0)
+        gt_normal_cy = gt_normal_cy.unsqueeze(0)
 
         gt_mvp_mtx = get_mvp_matrix(gt_c2w, gt_proj_mtx)
         gt_near = torch.tensor(gt_near, device=c2w.device).unsqueeze(0)
@@ -434,11 +426,7 @@ class RandomMultiviewCameraIterableDataset(RandomCameraIterableDataset):
         gt_rays_o, gt_rays_d = get_rays(
             gt_directions, gt_c2w, keepdim=True, normalize=True
         )
-        # gt_index = 0
-        # print('check fovy', gt_fovy, fovy)
-        # print('check directions', gt_directions.shape, directions.shape)
-        # print('check rays_o', gt_rays_o.shape, rays_o.shape)
-        # print('check rays_d', gt_rays_d.shape, rays_d.shape)
+
         if random.random() < 0.5:
             # sample elevation angles uniformly with a probability 0.5 (biased towards poles)
             elevation_deg = (

@@ -162,7 +162,7 @@ class SMPL_Guidance(BaseObject):
         diff_config_name: str = "diffusion"
         guidance_scale: float = 15.0
 
-        smpl_model_path: str = "../../data/smpl_related/models/" #"custom/threestudio-soar/utils/smpl_files/"
+        smpl_model_path: str = "../../data/smpl_related/models/"
         smpl_type: str = "smplx"
         gender: str = "male"
         batch_size: int = 1
@@ -170,8 +170,8 @@ class SMPL_Guidance(BaseObject):
         skip: int = 4
 
         seq: str = "dance"
-        dataset: str = "custom" #"fs-xhumans/soar" #neuman" #"insav_wild"  # "dna_rendering" #"insav_wild"
-        # cache_dir: str = "custom/threestudio-shap-e/shap-e/cache"
+        dataset: str = "custom" #"fs-xhumans/soar" # "dna_rendering" #"insav_wild"
+        
         num_subdiv: int = 2  # 1
 
     cfg: Config
@@ -547,38 +547,7 @@ class SMPL_Guidance(BaseObject):
             self.scale = 1.0 
 
     def densify(self, factor=2):
-        pass
-
-    def load_smpl_param(self, path):
-        assert self.cfg.smpl_type == "smpl", "Only support smpl model"
-        smpl_params = dict(np.load(str(path)))
-        print("smpl_params", smpl_params)
-        if "thetas" in smpl_params:
-            smpl_params["body_pose"] = smpl_params["thetas"][..., 3:]
-            smpl_params["global_orient"] = smpl_params["thetas"][..., :3]
-
-        print(
-            "betas",
-            smpl_params["betas"].shape,
-            "body_pose",
-            smpl_params["body_pose"].shape,
-            "global_orient",
-            smpl_params["global_orient"].shape,
-            "transl",
-            smpl_params["transl"].shape,
-        )
-        return {
-            "betas": torch.from_numpy(smpl_params["betas"].astype(np.float32)).cuda(),
-            "body_pose": torch.from_numpy(
-                smpl_params["body_pose"].astype(np.float32)
-            ).cuda(),
-            "global_orient": torch.from_numpy(
-                smpl_params["global_orient"].astype(np.float32)
-            ).cuda(),
-            "transl": torch.from_numpy(
-                smpl_params["transl"].astype(np.float32)
-            ).cuda(),  # + torch.tensor([0.0, 0.0, 3.0], device='cuda')
-        }
+        pass 
 
     def __call__(
         self,

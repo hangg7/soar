@@ -20,8 +20,8 @@ import skimage
 from skimage.metrics import structural_similarity as ski_ssim
 import lpips
 
-loss_fn_alex = lpips.LPIPS(net='alex').cuda()
-loss_fn_test_vgg = lpips.LPIPS(net='vgg', version='0.1')
+loss_fn_lpips = lpips.LPIPS(net='vgg', version='0.1').cuda()
+loss_fn_lpips = loss_fn_lpips.eval()
 
 def scale_gradients_hook(grad, mask=None):
     grad_copy = grad.clone()  # Make a copy to avoid in-place modifications
@@ -49,10 +49,6 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
             self.cfg.prompt_processor
         )
         self.prompt_utils = self.prompt_processor()
-        #  self.loss_fn_vgg = lpips.LPIPS(net="alex").cuda()
-        self.loss_fn_vgg = lpips.LPIPS(net="vgg").cuda()
-        for param in self.loss_fn_vgg.parameters():
-            param.requires_grad = False
 
         self.sds_start = 0 if self.cfg.training_stage == 1 else 500
         self.resampled = []
@@ -343,7 +339,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
                     thrsh=0,
                     weight=1,
                 )
-                + 1 * self.loss_fn_vgg(
+                + 1 * loss_fn_lpips(
                     (
                         (
                             gt_out["comp_normal"][[0]]
@@ -375,7 +371,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
                     thrsh=0,
                     weight=1,
                 )
-                + self.loss_fn_vgg(
+                + loss_fn_lpips(
                     (
                         (
                             gt_out["comp_normal"][[1]]
@@ -405,7 +401,7 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
             if self.cfg.loss["lambda_vgg"] > 0.0:
                 vgg_loss = (
                     self.C(self.cfg.loss["lambda_vgg"])
-                    * self.loss_fn_vgg(
+                    * loss_fn_lpips(
                         (gt_out["comp_rgb"].permute(0, 3, 1, 2) - 0.5) * 2,
                         (gt_rgb_blended.permute(0, 3, 1, 2) - 0.5) * 2,
                     ).mean()
@@ -562,8 +558,9 @@ class SurfelMVDreamSystem(BaseLift3DSystem):
         self.psnrs.append(psnr_)
         ssim_ = ski_ssim(pred,gt, multichannel=True, channel_axis=-1, data_range=1)
         self.ssims.append(ssim_)
+        loss_fn_lpips_test = loss_fn_lpips.cpu()
         with torch.no_grad():
-            lpips_ = loss_fn_test_vgg(
+            lpips_ = loss_fn_lpips_test(
                 torch.from_numpy(pred)[None].permute(0, 3, 1, 2) * 2 - 1, 
                 torch.from_numpy(gt)[None].permute(0, 3, 1, 2) * 2 - 1).mean()
             self.lpips.append(lpips_)
