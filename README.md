@@ -30,7 +30,7 @@ SOAR requires Python 3.10 or newer.
 2. **Install general dependencies.**
    ```bash
    cd soar
-   pip install -e .
+   pip install .
    ```
    Please note that after installing the package, you will find that `soar/threestudio-soar` is linked to `submodules/threestudio/custom` and `submodules/threestudio/outputs` is linked to `outputs`. If not, first go to the root folder of SOAR repo and run the following command:
    ```bash
