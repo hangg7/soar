@@ -6,7 +6,6 @@ from torch.cuda.amp import autocast
 
 from ..geometry.gaussian_base import Camera
 
-
 class GaussianBatchRenderer:
     def gt_forward(self, batch, mode="full", stage=0):
         renders = []
@@ -45,7 +44,6 @@ class GaussianBatchRenderer:
             znear=0.1,
             zfar=100,
             cxcy=(batch["gt_normal_cx"][0].item(), batch["gt_normal_cy"][0].item()),
-            #  cxcy=(256.0, 256.0),
             img_wh=(batch["gt_normal_res"], batch["gt_normal_res"]),
         )
 
@@ -56,7 +54,6 @@ class GaussianBatchRenderer:
             znear=0.1,
             zfar=100,
             cxcy=(batch["gt_normal_cx"][0].item(), batch["gt_normal_cy"][0].item()),
-            #  cxcy=(256.0, 256.0),
             img_wh=(batch["gt_normal_res"], batch["gt_normal_res"]),
         )
         prcppoint = torch.tensor(
@@ -136,19 +133,6 @@ class GaussianBatchRenderer:
             if render_pkg.__contains__("comp_bg"):
                 comp_bgs.append(render_pkg["comp_bg"])
             
-            # if render_pkg.__contains__("normal"):
-            #     normals.append(render_pkg["normal"])
-            #     normals.append(render_pkg["normal"])
-            # if (
-            #     render_pkg.__contains__("pred_normal")
-            #     and render_pkg["pred_normal"] is not None
-            # ):
-            #     pred_normals.append(render_pkg["pred_normal"])
-            #     pred_normals.append(render_pkg["pred_normal"])
-            # if render_pkg.__contains__("mask"):
-            #     normal_masks.append(render_pkg["mask"])
-            #     normal_masks.append(render_pkg["mask"])
-
         with autocast(enabled=False):
             render_pkg_normal = self.forward(
                 viewpoint_cam_normal,
@@ -296,7 +280,6 @@ class GaussianBatchRenderer:
                 c2w=batch["c2w"][batch_idx], fovx=fovy, fovy=fovy, znear=0.1, zfar=100
             )
 
-            # import pdb; pdb.set_trace()
             viewpoint_cam = Camera(
                 FoVx=fovy,
                 FoVy=fovy,
@@ -344,7 +327,6 @@ class GaussianBatchRenderer:
         renders = torch.stack(renders, dim=0)
         masks_tensor = torch.stack(masks, dim=0)
 
-        # save_image(comp_rgb_bg_all.permute(0, 3, 1, 2), "comp_rgb_bg_all.png")
         rendered_rgb = renders + (1 - masks_tensor) * comp_rgb_bg_all[:bs].permute(
             0, 3, 1, 2
         )
@@ -400,7 +382,6 @@ class GaussianBatchRenderer:
             )
 
         if "gt_c2w" in batch:
-            # breakpoint()
             # rand_bg = torch.ones_like(batch['gt_rgb']) * torch.rand(1, 3, 1, 1)
             rand_bg_color = torch.rand(3).to(batch["gt_rgb"].device)
             rand_bg = torch.ones_like(batch['gt_rgb']) * rand_bg_color
