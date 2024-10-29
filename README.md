@@ -32,6 +32,7 @@ SOAR requires Python 3.10 or newer.
    cd soar
    pip install .
    ```
+   It usually takes around 15 minutes to install all the dependencies.
    Please note that after installing the package, you will find that `soar/threestudio-soar` is linked to `submodules/threestudio/custom` and `submodules/threestudio/outputs` is linked to `outputs`. If not, first go to the root folder of SOAR repo and run the following command:
    ```bash
    ln -sf $(pwd)/soar/threestudio-soar $(pwd)/submodules/threestudio/custom/ 
