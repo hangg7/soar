@@ -66,13 +66,44 @@ class CustomInstallCommand(install):
 
         # Install torch with the specific index URL
         if torch_index_url:
-            subprocess.run([
-            "pip", "install", "torch", "torchvision", "--index-url", torch_index_url
-        ])
+            if torch_index_url.endswith("cu121"):
+                subprocess.run([
+                    "pip", "install", "torch", "torchvision", "xformers", "--index-url", torch_index_url
+                ])
+            else:
+                subprocess.run([
+                "pip", "install", "torch", "torchvision", "--index-url", torch_index_url
+                ])
+                subprocess.run([
+                    "pip", "install", "xformers==0.0.20"
+                ])
         else:
             subprocess.run([
                 "pip", "install", "torch", "torchvision"
-            ]) 
+            ])
+            
+        # Import torch after installation to check the version
+        import torch
+        torch_version = torch.__version__
+        print(f"\033[92mDetected Torch version: {torch_version}\033[0m")
+
+        # Install the appropriate pytorch-lightning version based on the PyTorch version
+        if torch_version >= "2.1":
+            lightning_version = ">=2.1,<=2.4"  # Adjust version range if needed
+        elif torch_version >= "2.0":
+            lightning_version = ">=2.0,<=2.3"
+        elif torch_version >= "1.13":
+            lightning_version = ">=1.9,<=2.2"
+        elif torch_version >= "1.12":
+            lightning_version = "<=2.1"
+        else:
+            lightning_version = ""  # Install the latest if no specific match
+
+        # Install pytorch-lightning with the specified version if needed
+        if lightning_version:
+            subprocess.run(["pip", "install", f"pytorch-lightning{lightning_version}"])
+        else:
+            subprocess.run(["pip", "install", "pytorch-lightning"]) 
 
         # Install additional submodules
         subprocess.run(["pip", "install", "-e", "./submodules/diff-gaussian-rasterization"])
@@ -111,7 +142,6 @@ class CustomInstallCommand(install):
             "nvdiffrast @ git+https://github.com/NVlabs/nvdiffrast/",
             "tinycudann @ git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch",
             "pytorch3d @ git+https://github.com/facebookresearch/pytorch3d.git",
-            "xformers",
             "accelerate>=0.26.0",
         ]
         
