@@ -13,13 +13,10 @@ from copy import deepcopy
 from pytorch3d.ops import knn_points
 from pytorch3d.transforms import matrix_to_quaternion
 
-import importlib
+import sys
+sys.path.append(realpath(join(dirname(__file__), "..", )))
+from utils.smplx import SMPL, SMPLX
 
-module_name = "soar.threestudio-soar.utils.smplx"
-
-module = importlib.import_module(module_name)
-SMPLX = getattr(module, "SMPLX")
-SMPL = getattr(module, "SMPL")
 from util import load_obj_mesh
 
 
