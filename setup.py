@@ -59,14 +59,16 @@ class CustomInstallCommand(install):
             torch_index_url = "https://download.pytorch.org/whl/cu117"
         elif cuda_version in ["11.3", "11.4", "11.5", "11.6"]:
             torch_index_url = "https://download.pytorch.org/whl/cu113"
-        elif cuda_version is not None and cuda_version.startswith("12."):
+        elif cuda_version in ["12.1", "12.2", "12.3"]:
             torch_index_url = "https://download.pytorch.org/whl/cu121"
+        elif cuda_version >= "12.4":
+            torch_index_url = "https://download.pytorch.org/whl/cu124"
         else:
             torch_index_url = None
 
         # Install torch with the specific index URL
         if torch_index_url:
-            if torch_index_url.endswith("cu121"):
+            if cuda_version >= "12.1":
                 subprocess.run([
                     "pip", "install", "torch", "torchvision", "xformers", "--index-url", torch_index_url
                 ])
