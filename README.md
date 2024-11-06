@@ -1,7 +1,7 @@
 # SOAR 
 
 **[Project page](https://soar-avatar.github.io/) &bull;
-[arXiv](https://arxiv.org/abs/)**
+[arXiv](https://arxiv.org/abs/2410.23800)**
 
 This is the official implementation for [SOAR](https://soar-avatar.github.io/).
 <div align='center'>
@@ -25,7 +25,7 @@ SOAR requires Python 3.10 or newer.
 
 1. **Clone the repository.**
    ```bash
-   git clone https://github.com/xxx.git --recursive
+   git clone https://github.com/hangg7/soar.git --recursive
    ```
 2. **Install general dependencies.**
    ```bash
