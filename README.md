@@ -1,3 +1,5 @@
+
+
 # SOAR 
 
 **[Project page](https://soar-avatar.github.io/) &bull;
@@ -50,6 +52,7 @@ SOAR requires Python 3.10 or newer.
    ```bash
    bash fetch_data.sh
    ```
+   The script will prompt for your ICON username and password.
     This will download and unzip the following files:
    <details>
 
